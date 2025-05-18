@@ -1,5 +1,13 @@
 package com.myname.mymodid;
 
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +32,9 @@ public class MyMod {
     // GameRegistry." (Remove if not needed)
     public void preInit(FMLPreInitializationEvent event) {
         proxy.preInit(event);
+
+        MinecraftForge.EVENT_BUS.register(this);
+        FMLCommonHandler.instance().bus().register(this);
     }
 
     @Mod.EventHandler
@@ -42,5 +53,21 @@ public class MyMod {
     // register server commands in this event handler (Remove if not needed)
     public void serverStarting(FMLServerStartingEvent event) {
         proxy.serverStarting(event);
+    }
+
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public void itemDrop(TickEvent.ClientTickEvent event) {
+        if (Minecraft.getMinecraft().theWorld == null) return;
+
+        if (event.phase == TickEvent.Phase.END) {
+            var client = Minecraft.getMinecraft();
+            var player = client.thePlayer;
+            var itemEntities = client.theWorld.getEntitiesWithinAABB(EntityItem.class, player.boundingBox.expand(10.0, 5.0, 10.0));
+
+            for (var item : itemEntities) {
+                client.theWorld.spawnParticle("largesmoke", item.posX, item.posY, item.posZ, 0.0D, 0.0D, 0.0D);
+            }
+        }
     }
 }
