@@ -7,6 +7,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,6 +60,7 @@ public class MyMod {
     @SideOnly(Side.CLIENT)
     public void itemDrop(TickEvent.ClientTickEvent event) {
         if (Minecraft.getMinecraft().theWorld == null) return;
+        if (!ClientCommands.particles_enabled) return;
 
         if (event.phase == TickEvent.Phase.END) {
             var client = Minecraft.getMinecraft();
@@ -66,8 +68,25 @@ public class MyMod {
             var itemEntities = client.theWorld.getEntitiesWithinAABB(EntityItem.class, player.boundingBox.expand(10.0, 5.0, 10.0));
 
             for (var item : itemEntities) {
-                client.theWorld.spawnParticle("largesmoke", item.posX, item.posY, item.posZ, 0.0D, 0.0D, 0.0D);
+                client.theWorld.spawnParticle("smoke", item.posX, item.posY, item.posZ, 0.0D, 0.0D, 0.0D);
             }
+        }
+    }
+
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public void chatCommands(ClientChatReceivedEvent event) {
+        var message = event.message.getUnformattedText();
+        var split = message.split(";");
+        if (split.length > 1) {
+            var command = split[1];
+            var flag = ClientCommands.executeCommand(command);
+
+            if (flag) {
+                event.setCanceled(true);
+            }
+
+            LOG.info("Command completed successfully? {}", flag);
         }
     }
 }
